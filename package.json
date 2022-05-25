@@ -1,0 +1,24 @@
+{
+  "name": "tic-tac-toe_backend",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "crypto": "^1.0.1",
+    "express": "^4.18.1",
+    "ws": "^8.6.0"
+  },
+  "devDependencies": {
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
+    "jest": "^28.1.0",
+    "nodemon": "^2.0.16"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "jest"
+  },
+  "babel": {
+    "plugins": [
+      "transform-es2015-modules-commonjs"
+    ]
+  }
+}
