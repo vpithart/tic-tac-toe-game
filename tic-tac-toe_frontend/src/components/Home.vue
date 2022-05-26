@@ -1,8 +1,6 @@
 <template>
   <section class="container">
-    <div class="d-grid">
-      <button class="btn btn-primary btn-lg" type="button" v-on:click="startGame()">Play!</button>
-    </div>
+    <button class="btn btn-primary btn-lg" type="button" v-on:click="startGame()">Play!</button>
   </section>
 </template>
 
@@ -22,3 +20,13 @@ export default defineComponent({
   },
 })
 </script>
+
+<style scoped>
+section {
+  margin-top: 3em;
+}
+button {
+  width: 75vw;
+  max-width: 500px;
+}
+</style>

@@ -4,9 +4,7 @@ import {version as serverVersion} from './package.json';
 import * as gameLifecycle from './src/gameLifecycle'
 
 const app:Express = express()
-const port:Number = 8101
-
-const boardSize:Number = 8;
+const port:number = 8101
 
 app.post('/game', (req: Request, res: Response) => {
   res.send({
