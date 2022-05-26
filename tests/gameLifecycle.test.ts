@@ -1,4 +1,4 @@
-import * as gameLifecycle from '../src/gameLifecycle.js'
+import * as gameLifecycle from '../src/gameLifecycle'
 
 describe('createGame', () => {
   test('returns 8-character long string', () => {

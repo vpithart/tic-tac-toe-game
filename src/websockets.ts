@@ -1,20 +1,23 @@
-import { WebSocketServer } from 'ws';
+import { WebSocketServer } from 'ws'
+import {Express, Request, Response} from 'express'
+import { Server } from 'http';
 
-export default (expressServer) => {
+export default (expressServer: Server) => {
   const websocketServer = new WebSocketServer({
     noServer: true,
     path: "/websockets/game",
   });
 
-  expressServer.on("upgrade", (request, socket, head) => {
+
+  expressServer.on("upgrade", (request: Request, socket, head) => {
     websocketServer.on(
       "connection",
       function connection(websocketConnection, connectionRequest) {
-        const [_path, params] = connectionRequest?.url?.split("?");
+        const params = connectionRequest?.url?.split("?")[1];
         console.log(`WS connection from game ${params}`);
 
         websocketConnection.on("message", (message) => {
-          const parsedMessage = JSON.parse(message);
+          const parsedMessage = JSON.parse(message.toString());
           console.log('WS message', parsedMessage);
         });
       }
