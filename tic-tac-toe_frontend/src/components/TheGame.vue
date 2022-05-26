@@ -7,16 +7,18 @@
   </section>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from "vue"
+
+export default defineComponent({
   name: 'TheGame',
   props: {
     id: String
   },
   data() {
     return {
-      socketAddress: undefined,
-      socket: undefined,
+      socketAddress: '',
+      socket: WebSocket,
       socketState: undefined
     }
   },
@@ -26,42 +28,36 @@ export default {
       {
         this.$router.push('/')
       }
-    }
-  },
-  setup() {
-    function openWebsocket () {
+    },
+    openWebsocket() {
       this.socketAddress = 'ws'
+
       if (window.location.protocol === 'https') this.socketAddress += 's'
       this.socketAddress += '://'
       this.socketAddress += window.location.host
       this.socketAddress += '/api/websockets'
       this.socketAddress += '/game?' + this.$route.params.id
 
-      this.socket = new WebSocket(this.socketAddress);
-      this.socket.onclose =  () => {
-       setTimeout(openWebsocket, 15000)
+      // this.socket = new WebSocket(this.socketAddress);
+      let newSocket:WebSocket;
+      newSocket = new WebSocket(this.socketAddress);
+      newSocket.onclose =  () => {
+       setTimeout(this.openWebsocket, 15000)
       }
-      this.socket.onmessage = processMessage
-      this.socket.onopen = () => {
-        this.socket.send(JSON.stringify({ble: 124}))
+      newSocket.onmessage = this.processMessage
+      newSocket.onopen = () => {
+        newSocket.send(JSON.stringify({ble: 124}))
       }
+    },
+    processMessage(msg:MessageEvent) {
+      console.log('got:', msg.data)
     }
-    function closeWebsocket() {
-      if (this.socket)
-        this.socket.onclose = undefined
-        this.socket.close()
-        this.socket = undefined
-    }
-    function processMessage(msg) {
-      console.log('got:', msg)
-    }
-    return { openWebsocket, closeWebsocket }
   },
   created() {
     this.openWebsocket()
   },
 
-}
+})
 </script>
 
 <style scoped>
