@@ -2,7 +2,11 @@
   <section class="container board">
   </section>
   <section class="container">
-    <p>Game ID {{ $route.params.id }}</p>
+    <p>
+      Game ID {{ $route.params.id }}
+      <span v-if="socketConnected">🟢</span>
+      <span v-else>⚪️</span>
+    </p>
     <button type="button" class="btn btn-outline-danger" @click="leaveGame()">leave the game</button>
   </section>
 </template>
@@ -18,8 +22,8 @@ export default defineComponent({
   data() {
     return {
       socketAddress: '',
-      socket: WebSocket,
-      socketState: undefined
+      socketConnected: false as boolean,
+      theSocket: {} as WebSocket
     }
   },
   methods: {
@@ -38,15 +42,15 @@ export default defineComponent({
       this.socketAddress += '/api/websockets'
       this.socketAddress += '/game?' + this.$route.params.id
 
-      // this.socket = new WebSocket(this.socketAddress);
-      let newSocket:WebSocket;
-      newSocket = new WebSocket(this.socketAddress);
-      newSocket.onclose =  () => {
-       setTimeout(this.openWebsocket, 15000)
+      this.theSocket = new WebSocket(this.socketAddress);
+      this.theSocket.onclose = () => {
+        this.socketConnected = false
+        setTimeout(this.openWebsocket, 5000)
       }
-      newSocket.onmessage = this.processMessage
-      newSocket.onopen = () => {
-        newSocket.send(JSON.stringify({ble: 124}))
+      this.theSocket.onmessage = this.processMessage
+      this.theSocket.onopen = () => {
+        this.socketConnected = true
+        this.theSocket.send(JSON.stringify({hello: `The game from ${window.location.href}`}))
       }
     },
     processMessage(msg:MessageEvent) {
@@ -56,6 +60,14 @@ export default defineComponent({
   created() {
     this.openWebsocket()
   },
+  unmounted() {
+    this.theSocket.send(JSON.stringify({bye: `The game from ${window.location.href}`}))
+    console.log('socket close')
+    this.theSocket.onclose = null
+    this.theSocket.onmessage = null
+    this.theSocket.onopen = null
+    this.theSocket.close()
+  }
 
 })
 </script>
