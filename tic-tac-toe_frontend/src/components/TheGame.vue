@@ -5,31 +5,34 @@
     </p>
     <section id="board" class="mx-auto limited-width"
       v-if="!(waitingForPeer && boardIsEmpty)"
-      :class="{inactive: !socketConnected}"
+      :class="{inactive: !socketConnected || waitingForPeer}"
     >
       <TheBoard :rows="board" :myTurn="myTurn" :myName="playerName" @touch="boardInteraction"/>
     </section>
     <section class="mx-auto limited-width">
-      <div v-if="!socketConnected" role="alert" class="alert alert-warning">🚫 trying to connect ☁️</div>
-
-      <div v-if="canIPlay === false">
-        observing the game
-        <span v-if="turn">- player {{turn}} on turn</span>
+      <div v-if="!socketConnected" role="alert" class="alert alert-warning">
+        🚫 trying to connect ☁️
       </div>
-
       <div v-else>
-        <div v-if="waitingForPeer">
-          <div class="alert alert-warning">
-            <p>⏳ Waiting for the peer</p>
-            <p>Share this link to this page with the other player:</p>
-            <QRCode :text="location"/>
-            <small>{{ location }}</small>
-          </div>
+        <div v-if="canIPlay === false">
+          observing the game
+          <span v-if="turn">- player {{turn}} on turn</span>
         </div>
-        <span v-else>
-          <div v-if="myTurn" class="alert alert-primary">▶️ It's your turn. Touch the board!</div>
-          <div v-else class="alert alert-secondary">⏳ waiting for the other player</div>
-        </span>
+
+        <div v-else>
+          <div v-if="waitingForPeer">
+            <div class="alert alert-warning">
+              <p>⏳ Waiting for the peer</p>
+              <p>Share this link to this page with the other player:</p>
+              <QRCode :text="location"/>
+              <small>{{ location }}</small>
+            </div>
+          </div>
+          <span v-else>
+            <div v-if="myTurn" class="alert alert-primary">▶️ It's your turn. Touch the board!</div>
+            <div v-else class="alert alert-secondary">⏳ waiting for the other player</div>
+          </span>
+        </div>
       </div>
 
       <button v-if="canIPlay" type="button" class="btn btn-outline-danger" @click="leaveGame()">leave the game</button>
@@ -99,7 +102,7 @@ export default defineComponent({
 
       this.theSocket.onclose = () => {
         this.socketConnected = false
-        this.initialized = false
+        // this.initialized = false
         clearInterval(this.keepaliveTimer)
         this.reconnectTimer = Number(setTimeout(this.openWebsocket, 5e3))
       }

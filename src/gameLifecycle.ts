@@ -83,7 +83,7 @@ export function assignPlayer(gameId:string, playerId:number):string|null {
     game.playerA = playerId
 
     if (game.playerB === undefined) {
-      PubSub.publish(`game-${gameId}-${playerId}`, { waitingForPeer: true });
+      PubSub.publish(`game-${gameId}-${playerId}`, { waitingForPeer: true, turn: null });
     }
     if (game.playerB) {
       game.turn = B;
@@ -120,7 +120,7 @@ export function playerLeft(gameId:string, playerId:number) {
     game.turn = undefined
     game.playerA = undefined
     if (game.playerB) {
-      PubSub.publish(`game-${gameId}-${game.playerB}`, { waitingForPeer: true, turn: undefined });
+      PubSub.publish(`game-${gameId}-${game.playerB}`, { waitingForPeer: true, turn: null });
     }
   }
 
@@ -128,7 +128,7 @@ export function playerLeft(gameId:string, playerId:number) {
     game.playerB = undefined
     game.turn = undefined
     if (game.playerA) {
-      PubSub.publish(`game-${gameId}-${game.playerA}`, { waitingForPeer: true, turn: undefined});
+      PubSub.publish(`game-${gameId}-${game.playerA}`, { waitingForPeer: true, turn: null});
     }
   }
 
