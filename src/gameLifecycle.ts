@@ -75,12 +75,16 @@ export function assignPlayer(gameId:string, playerId:number):string|null {
 
   if (game.playerA === playerId) {
     iAm = A
+    PubSub.publish(`game-${gameId}-${playerId}`, { playerName: iAm });
   }
   else if (game.playerB === playerId) {
     iAm = B
+    PubSub.publish(`game-${gameId}-${playerId}`, { playerName: iAm });
   }
   else if (game.playerA === undefined) {
+    iAm = A
     game.playerA = playerId
+    PubSub.publish(`game-${gameId}-${playerId}`, { playerName: iAm });
 
     if (game.playerB === undefined) {
       PubSub.publish(`game-${gameId}-${playerId}`, { waitingForPeer: true, turn: null });
@@ -90,19 +94,17 @@ export function assignPlayer(gameId:string, playerId:number):string|null {
       PubSub.publish(`game-${gameId}-${game.playerB}`, { waitingForPeer: false, turn: game.turn });
     }
 
-    iAm = A
   }
   else if (game.playerB === undefined) {
-    game.playerB = playerId
-
-    game.turn = A;
-    PubSub.publish(`game-${gameId}-${game.playerA}`, {waitingForPeer: false, turn: game.turn});
-
     iAm = B
+    game.playerB = playerId
+    game.turn = B;
+
+    PubSub.publish(`game-${gameId}-${playerId}`, { playerName: iAm, turn: B });
+    PubSub.publish(`game-${gameId}-${game.playerA}`, {waitingForPeer: false, turn: B});
   }
 
   if (iAm) {
-    PubSub.publish(`game-${gameId}-${playerId}`, { playerName: iAm });
     return iAm
   }
 
