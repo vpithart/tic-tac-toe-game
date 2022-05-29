@@ -1,9 +1,9 @@
 <template>
-<div class="container">
-  <div v-if="!socketConnected" role="alert" class="alert alert-danger">🚫 trying to connect ☁️</div>
-  <section id="board" class="container" @click="boardInteraction()">
+  <section id="board" class="mx-auto limited-width" :class="{inactive: !socketConnected}">
+    <TheBoard :rows="board" :myTurn="myTurn" :myName="playerName" @touch="boardInteraction"/>
   </section>
-  <section class="container">
+  <section class="mx-auto limited-width">
+    <div v-if="!socketConnected" role="alert" class="alert alert-warning">🚫 trying to connect ☁️</div>
     <p>
       &nbsp;
       Game ID {{ $route.params.id }}
@@ -11,28 +11,35 @@
         &nbsp;
         <span v-if="playerName">player {{playerName}}</span>
         <br>
-        <span v-if="canIPlay === false">observer</span>
+        <span v-if="canIPlay === false">
+          observing the game
+          <span v-if="turn">- player {{turn}} on turn</span>
+        </span>
+
         <span v-else>
           <span v-if="waitingForPeer">
             🔎 waiting for peer
           </span>
           <span v-else>
-            <span v-if="myTurn">▶️ play!</span>
-            <span v-else>⏳ wait</span>
+            <div v-if="myTurn" class="alert alert-primary">▶️ It's your turn. Play!</div>
+            <div v-else class="alert alert-secondary">⏳ wait</div>
           </span>
         </span>
       </span>
     </p>
-    <button type="button" class="btn btn-outline-danger" @click="leaveGame()">leave the game</button>
+    <button v-if="canIPlay" type="button" class="btn btn-outline-danger" @click="leaveGame()">leave the game</button>
   </section>
-</div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue"
+import TheBoard from './TheBoard.vue';
 
 export default defineComponent({
   name: 'TheGame',
+  components: {
+    TheBoard
+  },
   props: {
     id: String
   },
@@ -47,14 +54,16 @@ export default defineComponent({
       waitingForPeer: false as boolean,
       canIPlay: false as boolean,
       playerName: null as unknown as string,
-      myTurn: false as boolean
+      turn: undefined as string|undefined,
+      myTurn: false as boolean,
+      board: [] as Array<Array<string>>,
     }
   },
   methods: {
-    boardInteraction() {
+    boardInteraction(coords:Array<number>) {
       console.log('touch');
       if (this.canIPlay && this.myTurn) {
-        this.sendEvent('touch', {})
+        this.sendEvent('touch', {coords: coords})
       }
     },
     leaveGame() {
@@ -118,8 +127,11 @@ export default defineComponent({
       } catch (e) {
         return
       }
-      console.log('got command:', command)
+      console.log('got:', command)
       this.initialized = true
+      if ('board' in command) {
+        this.board = command.board
+      }
       if ('playerName' in command) {
         this.playerName = command.playerName
         this.canIPlay = command.playerName !== null
@@ -127,10 +139,11 @@ export default defineComponent({
       if ('waitingForPeer' in command) {
         this.waitingForPeer = command.waitingForPeer
       }
-      if ('myTurn' in command) {
-        this.myTurn = command.myTurn
+      if ('turn' in command) {
+        this.turn = command.turn
+        this.myTurn = command.turn === this.playerName
       }
-    }
+    },
   },
   created() {
     this.setupWebsocket()
@@ -151,18 +164,19 @@ export default defineComponent({
 
 <style scoped>
 #board {
-  width: 95vw;
-  max-width: 500px;
   height: 95vw;
   max-height: 500px;
   border: 1px solid gray;
 }
-div.alert {
+.limited-width {
   width: 95vw;
   max-width: 500px;
-  position: absolute;
+}
+#board.inactive {
+  filter: blur(2px);
 }
 section + section {
   margin-top: 1em;
 }
+
 </style>
