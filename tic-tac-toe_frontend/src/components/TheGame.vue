@@ -1,44 +1,55 @@
 <template>
-  <section id="board" class="mx-auto limited-width" :class="{inactive: !socketConnected}">
-    <TheBoard :rows="board" :myTurn="myTurn" :myName="playerName" @touch="boardInteraction"/>
-  </section>
-  <section class="mx-auto limited-width">
-    <div v-if="!socketConnected" role="alert" class="alert alert-warning">🚫 trying to connect ☁️</div>
-    <p>
-      &nbsp;
-      Game ID {{ $route.params.id }}
-      <span v-if="initialized">
-        &nbsp;
-        <span v-if="playerName">player {{playerName}}</span>
-        <br>
-        <span v-if="canIPlay === false">
-          observing the game
-          <span v-if="turn">- player {{turn}} on turn</span>
-        </span>
-
-        <span v-else>
-          <span v-if="waitingForPeer">
-            🔎 waiting for peer
-          </span>
-          <span v-else>
-            <div v-if="myTurn" class="alert alert-primary">▶️ It's your turn. Play!</div>
-            <div v-else class="alert alert-secondary">⏳ wait</div>
-          </span>
-        </span>
-      </span>
+  <div v-if="initialized">
+    <p v-if="playerName">
+      player {{playerName}}
     </p>
-    <button v-if="canIPlay" type="button" class="btn btn-outline-danger" @click="leaveGame()">leave the game</button>
-  </section>
+    <section id="board" class="mx-auto limited-width"
+      v-if="!(waitingForPeer && boardIsEmpty)"
+      :class="{inactive: !socketConnected}"
+    >
+      <TheBoard :rows="board" :myTurn="myTurn" :myName="playerName" @touch="boardInteraction"/>
+    </section>
+    <section class="mx-auto limited-width">
+      <div v-if="!socketConnected" role="alert" class="alert alert-warning">🚫 trying to connect ☁️</div>
+
+      <div v-if="canIPlay === false">
+        observing the game
+        <span v-if="turn">- player {{turn}} on turn</span>
+      </div>
+
+      <div v-else>
+        <div v-if="waitingForPeer">
+          <div class="alert alert-warning">
+            <p>⏳ Waiting for the peer</p>
+            <p>Share this link to this page with the other player:</p>
+            <QRCode :text="location"/>
+            <small>{{ location }}</small>
+          </div>
+        </div>
+        <span v-else>
+          <div v-if="myTurn" class="alert alert-primary">▶️ It's your turn. Touch the board!</div>
+          <div v-else class="alert alert-secondary">⏳ waiting for the other player</div>
+        </span>
+      </div>
+
+      <button v-if="canIPlay" type="button" class="btn btn-outline-danger" @click="leaveGame()">leave the game</button>
+    </section>
+  </div>
+  <div v-else>
+    Game #{{$route.params.id}} loading
+  </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue"
 import TheBoard from './TheBoard.vue';
+import QRCode from './QRCode.vue';
 
 export default defineComponent({
   name: 'TheGame',
   components: {
-    TheBoard
+    TheBoard,
+    QRCode
   },
   props: {
     id: String
@@ -90,13 +101,13 @@ export default defineComponent({
         this.socketConnected = false
         this.initialized = false
         clearInterval(this.keepaliveTimer)
-        this.reconnectTimer = setTimeout(this.openWebsocket, 5e3)
+        this.reconnectTimer = Number(setTimeout(this.openWebsocket, 5e3))
       }
 
       this.theSocket.onopen = () => {
         this.socketConnected = true
 
-        this.keepaliveTimer = setInterval(this.sendKeepalive, 300e3)
+        this.keepaliveTimer = Number(setInterval(this.sendKeepalive, 300e3))
       }
     },
     randomPlayerId() {
@@ -144,6 +155,19 @@ export default defineComponent({
         this.myTurn = command.turn === this.playerName
       }
     },
+  },
+  computed: {
+    location() {
+      return window.location.toString()
+    },
+    boardIsEmpty() {
+      for (let row of this.board) {
+        for (let col of row) {
+          if (col !== '') return false
+        }
+      }
+      return true
+    }
   },
   created() {
     this.setupWebsocket()
