@@ -2,16 +2,14 @@ import crypto from 'crypto';
 import PubSub from 'pubsub-js'
 
 const boardSize:Number = 8;
-const A:string = 'X'
-const B:string = 'O'
 
-type Board = Array<Array<string>>
+type Board = Array<Array<number>>
 
 type Game = {
   id: string
   playerA: number | undefined
   playerB: number | undefined
-  turn?: string
+  turn?: number
   board: Board
 }
 
@@ -24,7 +22,7 @@ function emptyBoard():Board {
   for (let i = 0; i < boardSize; i++) {
     newBoard[i] = []
     for (let j = 0; j < boardSize; j++) {
-      newBoard[i][j] = ''
+      newBoard[i][j] = 0
     }
   }
 
@@ -65,50 +63,50 @@ function deleteGame(id:string) {
   games.splice(gameIdx, 1)
 }
 
-export function assignPlayer(gameId:string, playerId:number):string|null {
+export function assignPlayer(gameId:string, playerId:number):number|null {
   let game = findGameById(gameId)
   console.log('assignPlayer', playerId, 'to game', gameId)
 
   PubSub.publish(`game-${gameId}`, { board: game.board });
 
-  let iAm:string|undefined
+  let iAm:number|undefined
 
   if (game.playerA === playerId) {
-    iAm = A
-    PubSub.publish(`game-${gameId}-${playerId}`, { playerName: iAm });
+    iAm = 1
+    PubSub.publish(`game-${gameId}-${playerId}`, { playerNum: iAm });
   }
   else if (game.playerB === playerId) {
-    iAm = B
-    PubSub.publish(`game-${gameId}-${playerId}`, { playerName: iAm });
+    iAm = 2
+    PubSub.publish(`game-${gameId}-${playerId}`, { playerNum: iAm });
   }
   else if (game.playerA === undefined) {
-    iAm = A
+    iAm = 1
     game.playerA = playerId
-    PubSub.publish(`game-${gameId}-${playerId}`, { playerName: iAm });
+    PubSub.publish(`game-${gameId}-${playerId}`, { playerNum: iAm });
 
     if (game.playerB === undefined) {
       PubSub.publish(`game-${gameId}-${playerId}`, { waitingForPeer: true, turn: null });
     }
     if (game.playerB) {
-      game.turn = B;
+      game.turn = 2;
       PubSub.publish(`game-${gameId}-${game.playerB}`, { waitingForPeer: false, turn: game.turn });
     }
 
   }
   else if (game.playerB === undefined) {
-    iAm = B
+    iAm = 2
     game.playerB = playerId
-    game.turn = B;
+    game.turn = 2;
 
-    PubSub.publish(`game-${gameId}-${playerId}`, { playerName: iAm, turn: B });
-    PubSub.publish(`game-${gameId}-${game.playerA}`, {waitingForPeer: false, turn: B});
+    PubSub.publish(`game-${gameId}-${playerId}`, { playerNum: iAm, turn: 2 });
+    PubSub.publish(`game-${gameId}-${game.playerA}`, {waitingForPeer: false, turn: 2});
   }
 
   if (iAm) {
     return iAm
   }
 
-  PubSub.publish(`game-${gameId}-${playerId}`, { playerName: null, turn: game.turn });
+  PubSub.publish(`game-${gameId}-${playerId}`, { playerNum: null, turn: game.turn });
 
   return null
 }
@@ -152,17 +150,17 @@ export function processGameMessage(gameId:string, playerId:number, gameEvent:any
   if (gameEvent.event === 'touch') {
     if (!game.playerA || !game.playerB) return
 
-    if (playerId == game.playerA && game.turn === A) {
-      let tickIsValid = recordNewTick(game.board, A, gameEvent.data.coords[0], gameEvent.data.coords[1])
+    if (playerId == game.playerA && game.turn === 1) {
+      let tickIsValid = recordNewTick(game.board, 1, gameEvent.data.coords[0], gameEvent.data.coords[1])
       if (tickIsValid) {
-        game.turn = B
+        game.turn = 2
       }
     }
 
-    if (playerId == game.playerB && game.turn === B) {
-      let tickIsValid = recordNewTick(game.board, B,  gameEvent.data.coords[0], gameEvent.data.coords[1])
+    if (playerId == game.playerB && game.turn === 2) {
+      let tickIsValid = recordNewTick(game.board, 2,  gameEvent.data.coords[0], gameEvent.data.coords[1])
       if (tickIsValid) {
-        game.turn = A
+        game.turn = 1
       }
     }
 
@@ -170,8 +168,8 @@ export function processGameMessage(gameId:string, playerId:number, gameEvent:any
   }
 }
 
-function recordNewTick(board: Board, playerTag:string, x:number, y:number):boolean {
-  if (board[x][y] !== '') return false
-  board[x][y] = playerTag
+function recordNewTick(board: Board, playerNum:number, x:number, y:number):boolean {
+  if (board[x][y] !== 0) return false
+  board[x][y] = playerNum
   return true
 }

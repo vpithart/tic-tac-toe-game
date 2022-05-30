@@ -1,13 +1,13 @@
 <template>
   <div v-if="initialized">
-    <p v-if="playerName">
-      player {{playerName}}
+    <p v-if="playerNum">
+      player {{playerNum}} ({{symbol(playerNum)}})
     </p>
     <section id="board" class="mx-auto limited-width"
       v-if="!(waitingForPeer && boardIsEmpty)"
       :class="{inactive: !socketConnected || waitingForPeer}"
     >
-      <TheBoard :rows="board" :myTurn="myTurn" :myName="playerName" @touch="boardInteraction"/>
+      <TheBoard :rows="board" :myTurn="myTurn" :myNum="playerNum" @touch="boardInteraction"/>
     </section>
     <section class="mx-auto limited-width">
       <div v-if="!socketConnected" role="alert" class="alert alert-warning">
@@ -50,6 +50,7 @@
 import { defineComponent } from "vue"
 import TheBoard from './TheBoard.vue';
 import QRCode from './QRCode.vue';
+import { symbols } from "./board-symbols";
 
 export default defineComponent({
   name: 'TheGame',
@@ -70,7 +71,7 @@ export default defineComponent({
       initialized: false as boolean,
       waitingForPeer: false as boolean,
       canIPlay: false as boolean,
-      playerName: null as unknown as string,
+      playerNum: null as unknown as number,
       turn: undefined as string|undefined,
       myTurn: false as boolean,
       board: [] as Array<Array<string>>,
@@ -149,18 +150,21 @@ export default defineComponent({
       if ('board' in command) {
         this.board = command.board
       }
-      if ('playerName' in command) {
-        this.playerName = command.playerName
-        this.canIPlay = command.playerName !== null
+      if ('playerNum' in command) {
+        this.playerNum = command.playerNum
+        this.canIPlay = command.playerNum !== null
       }
       if ('waitingForPeer' in command) {
         this.waitingForPeer = command.waitingForPeer
       }
       if ('turn' in command) {
         this.turn = command.turn
-        this.myTurn = command.turn === this.playerName
+        this.myTurn = command.turn === this.playerNum
       }
     },
+    symbol(n:number) {
+      return symbols[n-1]
+    }
   },
   computed: {
     location() {

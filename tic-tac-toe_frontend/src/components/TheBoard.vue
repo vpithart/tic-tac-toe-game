@@ -6,7 +6,8 @@
         :class="{playable: myTurn && col == ''}"
         @click="boardInteraction(index1,index2)"
       >
-        {{col}}
+        <template v-if="col === 1">{{symbol1}}</template>
+        <template v-if="col === 2">{{symbol2}}</template>
       </td>
     </tr>
   </table>
@@ -14,13 +15,14 @@
 
 <script lang="ts">
 import { defineComponent } from "vue"
+import { symbols } from "./board-symbols";
 
 export default defineComponent({
   name: 'TheBoard',
   props: {
     rows: Array,
     myTurn: Boolean,
-    myName: String
+    myNum: Number
   },
   computed: {
     initialized() {
@@ -43,6 +45,12 @@ export default defineComponent({
         cursor: 'pointer',
       }
     },
+    symbol1() {
+      return symbols[0]
+    },
+    symbol2() {
+      return symbols[1]
+    }
   },
   methods: {
     boardInteraction(x:number, y:number) {
