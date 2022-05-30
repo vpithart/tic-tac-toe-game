@@ -35,12 +35,15 @@
         </div>
       </div>
 
-      <button v-if="canIPlay" type="button" class="btn btn-outline-danger" @click="leaveGame()">leave the game</button>
+      <button type="button" class="btn btn-outline-danger" @click="leaveGame()">leave the game</button>
     </section>
   </div>
   <div v-else>
     Game #{{$route.params.id}} loading
   </div>
+  <audio id="water-bubble-sound">
+    <source src="../assets/water-bubble-sound.ogg" type="audio/ogg">
+  </audio>
 </template>
 
 <script lang="ts">
@@ -172,6 +175,13 @@ export default defineComponent({
       return true
     }
   },
+  watch: {
+    myTurn(after, before) {
+      if (!before && after) {
+        document.querySelector<HTMLAudioElement>('#water-bubble-sound')?.play()
+      }
+    }
+  },
   created() {
     this.setupWebsocket()
     this.openWebsocket()
@@ -205,5 +215,7 @@ export default defineComponent({
 section + section {
   margin-top: 1em;
 }
-
+#water-bubble-sound {
+  display: none;
+}
 </style>
