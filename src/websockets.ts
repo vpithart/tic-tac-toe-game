@@ -19,7 +19,11 @@ export default (expressServer: Server) => {
     });
   });
 
-  websocketServer.on('connection',(websocketConnection, connectionRequest) => {
+  /*
+    /websockets/game?<gameId>,<playerId>
+    /websockets/game?3cbecfd5,5563137827197961
+  */
+   websocketServer.on('connection',(websocketConnection, connectionRequest) => {
     const params = connectionRequest?.url?.split('?')[1];
     const parts = params?.split(',')
     if (parts === undefined || parts.length !== 2) {

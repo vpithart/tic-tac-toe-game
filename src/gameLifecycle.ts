@@ -1,11 +1,11 @@
-import crypto from 'crypto';
 import PubSub from 'pubsub-js'
+import * as gameStore from './gameStoreMemory'
 
 const boardSize:Number = 8;
 
-type Board = Array<Array<number>>
+export type Board = Array<Array<number>>
 
-type Game = {
+export type Game = {
   id: string
   playerA: number | undefined
   playerB: number | undefined
@@ -13,58 +13,19 @@ type Game = {
   board: Board
 }
 
-// The Game store TODO store permanently
-var games: Game[] = []
-
-function emptyBoard():Board {
-  let newBoard:Board = [[]]
-
-  for (let i = 0; i < boardSize; i++) {
-    newBoard[i] = []
-    for (let j = 0; j < boardSize; j++) {
-      newBoard[i][j] = 0
-    }
-  }
-
-  return newBoard
-}
 export function createGame() {
-  const randomString = crypto.randomBytes(4).toString("hex");
 
   var newGame = {
-    id: randomString,
     playerA: undefined,
     playerB: undefined,
     board: emptyBoard()
   }
-  games.push(newGame)
 
-  return newGame.id
-}
-
-function recreateGame(id:string):Game {
-  const newGame = {
-    id: id,
-    playerA: undefined,
-    playerB: undefined,
-    board: emptyBoard()
-  }
-  games.push(newGame)
-  return newGame
-}
-
-function findGameById(id:string):Game {
-  const game = games.find((value) => value.id === id)
-  return game || recreateGame(id)
-}
-
-function deleteGame(id:string) {
-  const gameIdx = games.findIndex((value) => value.id === id)
-  games.splice(gameIdx, 1)
+  return gameStore.createGame(newGame)
 }
 
 export function assignPlayer(gameId:string, playerId:number):number|null {
-  let game = findGameById(gameId)
+  let game:Game = findOrCreateGameById(gameId)
   console.log('assignPlayer', playerId, 'to game', gameId)
 
   PubSub.publish(`game-${gameId}`, { board: game.board });
@@ -112,7 +73,7 @@ export function assignPlayer(gameId:string, playerId:number):number|null {
 }
 
 export function playerLeft(gameId:string, playerId:number) {
-  const game = findGameById(gameId)
+  const game:Game = findOrCreateGameById(gameId)
   if (!game) return null
   console.log('playerLeft', gameId, 'player', playerId)
 
@@ -136,16 +97,16 @@ export function playerLeft(gameId:string, playerId:number) {
 }
 
 function deleteAbandonedGame(gameId:string) {
-  const game = findGameById(gameId)
+  const game:Game = findOrCreateGameById(gameId)
   if (!game) return
   if (game.playerA === undefined && game.playerB === undefined) {
-    deleteGame(gameId)
+    gameStore.deleteGame(gameId)
   }
 }
 
 export function processGameMessage(gameId:string, playerId:number, gameEvent:any) {
   console.log(`⚙️ processGameMessage ${gameId} ${playerId}:`, gameEvent)
-  const game = findGameById(gameId)
+  const game:Game = findOrCreateGameById(gameId)
 
   if (gameEvent.event === 'touch') {
     if (!game.playerA || !game.playerB) return
@@ -172,4 +133,36 @@ function recordNewTick(board: Board, playerNum:number, x:number, y:number):boole
   if (board[x][y] !== 0) return false
   board[x][y] = playerNum
   return true
+}
+
+function findOrCreateGameById(id:string):Game
+{
+  return <Game>gameStore.findGameById(id) || recreateGame(id)
+}
+
+function recreateGame(id:string):Game {
+  const newGame = {
+    id: id,
+    playerA: undefined,
+    playerB: undefined,
+    board: emptyBoard()
+  }
+
+  gameStore.createGame(newGame)
+
+  return newGame
+}
+
+
+function emptyBoard():Board {
+  let newBoard:Board = [[]]
+
+  for (let i = 0; i < boardSize; i++) {
+    newBoard[i] = []
+    for (let j = 0; j < boardSize; j++) {
+      newBoard[i][j] = 0
+    }
+  }
+
+  return newBoard
 }
