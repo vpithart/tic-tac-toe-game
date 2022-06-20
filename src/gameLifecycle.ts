@@ -1,5 +1,5 @@
 import PubSub from 'pubsub-js'
-import * as gameStore from './gameStoreMemory'
+import * as gameStore from './gameStoreMongo'
 
 const boardSize:Number = 8;
 
@@ -24,8 +24,8 @@ export function createGame() {
   return gameStore.createGame(newGame)
 }
 
-export function assignPlayer(gameId:string, playerId:number):number|null {
-  let game:Game = findOrCreateGameById(gameId)
+export async function assignPlayer(gameId:string, playerId:number) {
+  let game:Game = await findOrCreateGameById(gameId)
   console.log('assignPlayer', playerId, 'to game', gameId)
 
   PubSub.publish(`game-${gameId}`, { board: game.board });
@@ -63,17 +63,17 @@ export function assignPlayer(gameId:string, playerId:number):number|null {
     PubSub.publish(`game-${gameId}-${game.playerA}`, {waitingForPeer: false, turn: 2});
   }
 
+  gameStore.saveGameState(game)
+
   if (iAm) {
-    return iAm
+    return
   }
 
   PubSub.publish(`game-${gameId}-${playerId}`, { playerNum: null, turn: game.turn });
-
-  return null
 }
 
-export function playerLeft(gameId:string, playerId:number) {
-  const game:Game = findOrCreateGameById(gameId)
+export async function playerLeft(gameId:string, playerId:number) {
+  const game:Game = await findOrCreateGameById(gameId)
   if (!game) return null
   console.log('playerLeft', gameId, 'player', playerId)
 
@@ -93,20 +93,22 @@ export function playerLeft(gameId:string, playerId:number) {
     }
   }
 
+  gameStore.saveGameState(game)
+
   setTimeout(() => deleteAbandonedGame(gameId), 60000)
 }
 
-function deleteAbandonedGame(gameId:string) {
-  const game:Game = findOrCreateGameById(gameId)
+async function deleteAbandonedGame(gameId:string) {
+  const game:Game = await findOrCreateGameById(gameId)
   if (!game) return
   if (game.playerA === undefined && game.playerB === undefined) {
     gameStore.deleteGame(gameId)
   }
 }
 
-export function processGameMessage(gameId:string, playerId:number, gameEvent:any) {
+export async function processGameMessage(gameId:string, playerId:number, gameEvent:any) {
   console.log(`⚙️ processGameMessage ${gameId} ${playerId}:`, gameEvent)
-  const game:Game = findOrCreateGameById(gameId)
+  const game:Game = await findOrCreateGameById(gameId)
 
   if (gameEvent.event === 'touch') {
     if (!game.playerA || !game.playerB) return
@@ -127,6 +129,8 @@ export function processGameMessage(gameId:string, playerId:number, gameEvent:any
 
     PubSub.publish(`game-${gameId}`, { board: game.board, turn: game.turn });
   }
+
+  gameStore.saveGameState(game)
 }
 
 function recordNewTick(board: Board, playerNum:number, x:number, y:number):boolean {
@@ -135,9 +139,13 @@ function recordNewTick(board: Board, playerNum:number, x:number, y:number):boole
   return true
 }
 
-function findOrCreateGameById(id:string):Game
+async function findOrCreateGameById(id:string):Promise<Game>
 {
-  return <Game>gameStore.findGameById(id) || recreateGame(id)
+  const found = await gameStore.findGameById(id)
+  if (found)
+    return <Game>found
+  else
+    return recreateGame(id)
 }
 
 function recreateGame(id:string):Game {

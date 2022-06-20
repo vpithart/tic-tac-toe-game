@@ -21,7 +21,7 @@ export default (expressServer: Server) => {
 
   /*
     /websockets/game?<gameId>,<playerId>
-    /websockets/game?3cbecfd5,5563137827197961
+    /websockets/game?62b0d52ab6cfdb1c7ed82373,5563137827197961
   */
    websocketServer.on('connection',(websocketConnection, connectionRequest) => {
     const params = connectionRequest?.url?.split('?')[1];
@@ -39,7 +39,7 @@ export default (expressServer: Server) => {
 
     console.log(`WS connection at ${connectionRequest?.url} from ${connectionRequest?.socket?.remoteAddress} port ${connectionRequest?.socket?.remotePort} game ${gameId} user-agent [${connectionRequest.headers['user-agent']}]`);
 
-    if (gameId?.length !== 8) {
+    if (gameId?.length !== 24) {
       websocketConnection.send(`Invalid gameid, bye.`)
       websocketConnection.close()
       return

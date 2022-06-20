@@ -1,6 +1,6 @@
 import express, {Express, Request, Response} from 'express'
-import websockets from './src/websockets';
-import {version as serverVersion} from './package.json';
+import websockets from './src/websockets'
+import {version as serverVersion} from './package.json'
 import * as gameLifecycle from './src/gameLifecycle'
 
 const app:Express = express()
