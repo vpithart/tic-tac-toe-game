@@ -100,12 +100,13 @@ export async function playerLeft(gameId:string, playerId:number) {
 
   gameStore.saveGameState(game)
 
-  setTimeout(() => deleteAbandonedGame(gameId), 1000)
+  setTimeout(() => deleteAbandonedGame(gameId), 10000)
 }
 
 async function deleteAbandonedGame(gameId:string) {
   const game:Game = await findOrCreateGameById(gameId)
   if (!game) return
+  console.log(`⚙️ deleteAbandonedGame: A=${game.playerA} B=${game.playerB}`);
   if (game.playerA === undefined && game.playerB === undefined) {
     gameStore.deleteGame(gameId);
     console.log(`⚙️ deleteAbandonedGame ${gameId}`);
@@ -127,13 +128,14 @@ export async function processGameMessage(gameId:string, playerId:number, gameEve
     }
 
     if (playerId == game.playerB && game.turn === 2) {
-      let tickIsValid = recordNewTick(game.board, 2,  gameEvent.data.coords[0], gameEvent.data.coords[1])
+      let tickIsValid = recordNewTick(game.board, 2, gameEvent.data.coords[0], gameEvent.data.coords[1])
       if (tickIsValid) {
         game.turn = 1
       }
     }
 
     PubSub.publish(`game-${gameId}`, { board: game.board, turn: game.turn });
+    PubSub.publish(`game-${gameId}`, { lastChangedCoords: gameEvent.data.coords });
   }
 
   gameStore.saveGameState(game)

@@ -18,7 +18,7 @@
       v-if="!(waitingForPeer && boardIsEmpty)"
       :class="{inactive: !socketConnected || waitingForPeer}"
     >
-      <TheBoard :rows="board" :myTurn="myTurn" :myNum="playerNum" @touch="boardInteraction"/>
+      <TheBoard :rows="board" :myTurn="myTurn" :myNum="playerNum" @touch="boardInteraction" :highlightX="highlightCoords![0]" :highlightY="highlightCoords![1]"/>
     </section>
     <section class="mx-auto limited-width">
       <div v-if="socketConnected">
@@ -74,6 +74,8 @@ export default defineComponent({
       turn: undefined as string|undefined,
       myTurn: false as boolean,
       board: [] as Array<Array<string>>,
+      highlightCoords: [NaN,NaN] as [number,number],
+      highlightCoordsTimer: null as ReturnType<typeof setTimeout>|null,
     }
   },
   methods: {
@@ -81,6 +83,7 @@ export default defineComponent({
       console.log('touch');
       if (this.canIPlay && this.myTurn) {
         this.sendEvent('touch', {coords: coords})
+        this.highlightCoords = [NaN,NaN]
       }
     },
     leaveGame() {
@@ -159,6 +162,13 @@ export default defineComponent({
       if ('turn' in command) {
         this.turn = command.turn
         this.myTurn = command.turn === this.playerNum
+      }
+      if ('lastChangedCoords' in command) {
+        this.highlightCoords = command.lastChangedCoords;
+        if (this.highlightCoordsTimer) clearTimeout(this.highlightCoordsTimer);
+        this.highlightCoordsTimer = setTimeout(() => {
+          this.highlightCoords = [NaN,NaN];
+        }, 5000)
       }
     },
     symbol(n:number) {

@@ -3,7 +3,7 @@
     <tr v-for="row, index1 in rows" :key="index1">
       <td v-for="col, index2 in row" :key="index2"
         :style="[cellSizes, onTurnStyles]"
-        :class="{playable: myTurn && col == ''}"
+        :class="{playable: (myTurn && col == ''), highlighted: (index1 === highlightX && index2 === highlightY)}"
         @click="boardInteraction(index1,index2)"
       >
         <template v-if="col === 1">{{symbol1}}</template>
@@ -22,7 +22,9 @@ export default defineComponent({
   props: {
     rows: Array,
     myTurn: Boolean,
-    myNum: Number
+    myNum: Number,
+    highlightX: Number,
+    highlightY: Number
   },
   computed: {
     initialized() {
@@ -72,5 +74,10 @@ td {
 }
 .playable:hover {
   background-color: #cfe2ff;
+}
+.highlighted {
+  color: red;
+  font-weight: bold;
+  background-color: #fff8f8;
 }
 </style>
