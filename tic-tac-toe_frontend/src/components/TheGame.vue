@@ -3,6 +3,17 @@
     <p v-if="playerNum">
       player {{playerNum}} ({{symbol(playerNum)}})
     </p>
+    <div v-if="!socketConnected" role="alert" class="alert alert-warning limited-width mx-auto">
+      🚫 trying to connect ☁️
+    </div>
+    <section v-if="canIPlay && waitingForPeer" class="mx-auto limited-width">
+      <div class="alert alert-warning">
+        <p>⏳ Waiting for the peer</p>
+        <p>Share this link to this page with the other player:</p>
+        <QRCode :text="location"/>
+        <small>{{ location }}</small>
+      </div>
+    </section>
     <section id="board" class="mx-auto limited-width"
       v-if="!(waitingForPeer && boardIsEmpty)"
       :class="{inactive: !socketConnected || waitingForPeer}"
@@ -10,25 +21,13 @@
       <TheBoard :rows="board" :myTurn="myTurn" :myNum="playerNum" @touch="boardInteraction"/>
     </section>
     <section class="mx-auto limited-width">
-      <div v-if="!socketConnected" role="alert" class="alert alert-warning">
-        🚫 trying to connect ☁️
-      </div>
-      <div v-else>
+      <div v-if="socketConnected">
         <div v-if="canIPlay === false">
           observing the game
           <span v-if="turn">- player {{turn}} on turn</span>
         </div>
-
         <div v-else>
-          <div v-if="waitingForPeer">
-            <div class="alert alert-warning">
-              <p>⏳ Waiting for the peer</p>
-              <p>Share this link to this page with the other player:</p>
-              <QRCode :text="location"/>
-              <small>{{ location }}</small>
-            </div>
-          </div>
-          <span v-else>
+          <span v-if="!waitingForPeer">
             <div v-if="myTurn" class="alert alert-primary">▶️ It's your turn. Touch the board!</div>
             <div v-else class="alert alert-secondary">⏳ waiting for the other player</div>
           </span>
@@ -106,19 +105,19 @@ export default defineComponent({
 
       this.theSocket.onclose = () => {
         this.socketConnected = false
-        // this.initialized = false
+        console.warn('websocket closed')
         clearInterval(this.keepaliveTimer)
         this.reconnectTimer = Number(setTimeout(this.openWebsocket, 5e3))
       }
 
       this.theSocket.onopen = () => {
         this.socketConnected = true
-
+        console.log('websocket open')
         this.keepaliveTimer = Number(setInterval(this.sendKeepalive, 300e3))
       }
     },
     randomPlayerId() {
-      return Math.floor(Math.random()*Number.MAX_SAFE_INTEGER)
+      return Math.floor(Math.random()*Number.MAX_SAFE_INTEGER) % 1e6;
     },
     myPlayerId() {
       const stored = localStorage.getItem('ttt_playerId')

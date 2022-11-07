@@ -1,7 +1,7 @@
 import PubSub from 'pubsub-js'
-import * as gameStore from './gameStoreMongo'
 
 const boardSize:Number = 8;
+var gameStore:any = undefined;
 
 export type Board = Array<Array<number>>
 
@@ -13,6 +13,10 @@ export type Game = {
   board: Board
 }
 
+export function useGameStore(store:any) {
+  gameStore = store
+}
+
 export function createGame() {
 
   var newGame = {
@@ -21,12 +25,13 @@ export function createGame() {
     board: emptyBoard()
   }
 
-  return gameStore.createGame(newGame)
+  const id = gameStore.createGame(newGame);
+  console.log('createGame', id)
+  return id;
 }
 
 export async function assignPlayer(gameId:string, playerId:number) {
   let game:Game = await findOrCreateGameById(gameId)
-  console.log('assignPlayer', playerId, 'to game', gameId)
 
   PubSub.publish(`game-${gameId}`, { board: game.board });
 
@@ -95,14 +100,15 @@ export async function playerLeft(gameId:string, playerId:number) {
 
   gameStore.saveGameState(game)
 
-  setTimeout(() => deleteAbandonedGame(gameId), 60000)
+  setTimeout(() => deleteAbandonedGame(gameId), 1000)
 }
 
 async function deleteAbandonedGame(gameId:string) {
   const game:Game = await findOrCreateGameById(gameId)
   if (!game) return
   if (game.playerA === undefined && game.playerB === undefined) {
-    gameStore.deleteGame(gameId)
+    gameStore.deleteGame(gameId);
+    console.log(`⚙️ deleteAbandonedGame ${gameId}`);
   }
 }
 

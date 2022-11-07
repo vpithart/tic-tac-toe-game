@@ -1,64 +1,53 @@
 import mongoose from 'mongoose'
-const { Schema } = mongoose
+import GameModel from './model/game'
 
-const mongodbUrl = 'mongodb://localhost/tictactoe-dev';
-
-mongoose.connect(mongodbUrl,function (err) {
-   if (err)
-    console.error("Error occurred while connecting to DB!")
-  else
-    console.log("Database connection established successfully")
-  }
-)
-
-export type Board = Array<Array<number>>
-
-interface ObjectWithId extends Object {
-  id: string
+export function connectMongoDb(url:string) {
+  mongoose.connect(url, (err) => {
+    if (err) {
+      console.error(`Error occurred while connecting to MongoDB! (url=${url})`)
+      console.error(err)
+    }
+  })
 }
 
-const gameSchema = new Schema({
-  playerA: { type: Number },
-  playerB: { type: Number },
-  turn: { type: Number, require: false },
-  board: { type: [[]]}
-})
+/* 8 characters long random string: 'ywi0s1qa' 'jhxrib83' etc. */
+function randomShortId(): string {
+  return (Math.random() + 1).toString(36).slice(2,10).padStart(8, '0');
+}
 
-const GameModel = mongoose.model('Game', gameSchema);
-
-export function createGame(newGameStub:any) {
+export function createGame(newGameStub:any): string {
 
   const newGame = new GameModel()
 
+  newGame.shortId = randomShortId();
   newGame.playerA = newGameStub.playerA
   newGame.playerB = newGameStub.playerB
   newGame.board = newGameStub.board
 
   newGame.save()
 
-  return newGame._id
+  return newGame.shortId.toString()
 }
 
-export async function findGameById(id:string):Promise<ObjectWithId|undefined> {
-  const game = await GameModel.findById(id).exec()
+export async function findGameById(id:string):Promise<any|undefined> {
+  const game = await GameModel.findOne({shortId: id})
   if (game !== null)
-    return <ObjectWithId>game
+    return game
   else
     return undefined
 }
 
 export async function saveGameState(game:any) {
-  const g = await GameModel.findById(game.id).exec()
+  const g = await GameModel.findOne({shortId: game.shortId})
   if (g === null) return
 
   g.playerA = game.playerA
   g.playerB = game.playerB
   g.turn = game.turn
   g.board = game.board
-
-  g.save()
+  await g.save()
 }
 
 export function deleteGame(id:string) {
-  GameModel.findByIdAndDelete(id).exec()
+  GameModel.deleteOne({shortId: id}).exec()
 }
